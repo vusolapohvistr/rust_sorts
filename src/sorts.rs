@@ -1,6 +1,8 @@
 use super::generate_tests::gen_random_vec;
 
 use rand::{thread_rng, Rng};
+use std::collections::LinkedList;
+
 pub fn fat_sort<T: Copy + PartialOrd>(arr: &mut [T]) {
     for i in 0..arr.len() {
         let mut min_index = i;
@@ -38,27 +40,31 @@ pub fn lsd_sort(arr: &mut [usize]) {
 }
 
 pub fn patience_sort<T: Copy + Eq + Ord>(arr: &mut [T]) {
-    let mut stacks: Vec<Vec<T>> = Vec::new();
+    let mut stacks: Vec<LinkedList<T>> = Vec::new();
     for el in arr.iter() {
         if stacks.len() > 0 {
             let mut pushed = false;
-            for stack in &mut stacks {
+            for stack in stacks.iter_mut() {
                 match stack.last() {
                     Some(val) => {
                         if *val > *el {
-                            stack.push(*el);
+                            stack.push_back(*el);
                             pushed = true;
                             break;
                         }
                     }
-                    _ => {}
+                    None => {}
                 }
             }
             if !pushed {
-                stacks.push(vec![*el]);
+                let mut new_stack = LinkedList::new();
+                new_stack.push_back(*el);
+                stacks.push(new_stack);
             }
         } else {
-            stacks.push(vec![*el]);
+            let mut new_stack = LinkedList::new();
+            new_stack.push_back(*el);
+            stacks.push(new_stack);
         }
     }
 }
@@ -154,18 +160,84 @@ pub fn insertion_sort<T: Copy + Eq + Ord>(arr: &mut [T]) {
     }
 }
 
-/*
+
 pub fn timsort(arr: &mut [usize]) {
     let minrun = get_min_run(arr.len());
-    let mut runs = vec![vec![0]];
+    let mut runs = vec![vec![]];
 
+
+    // Creating runs
     let mut current_index = 0;
-
     while current_index < arr.len() {
-        let mut current_run = vec![0];
+        if current_index + minrun > arr.len() {
+            let mut run = arr[current_index..current_index + minrun].to_vec();
+            current_index += minrun;
+            loop {
+                match arr.get(current_index) {
+                    Some(val) => {
+                        if *val > *run.last().unwrap() {
+                            run.push(*val);
+                            current_index += 1;
+                        } else {
+                            break;
+                        }
+                    }
+                    None => {
+                        break;
+                    }
+                }
+            }
+            insertion_sort(run.as_mut_slice());
+            runs.push(run);
+        } else {
+            let mut run = arr[current_index..].to_vec();
+            insertion_sort(run.as_mut_slice());
+            println!("{:?}", run);
+            runs.push(run);
+            break;
+        }
+    }
+
+    // Merging
+
+    if runs.len() > 1 {
+        let mut merged = vec![];
+        for run in runs {
+            merged = merge(merged.as_slice(), run.as_slice());
+        }
+        for i in 0..merged.len() {
+            arr[i] = merged[i];
+        }
+    } else {
+        for i in 0..runs[0].len() {
+            arr[i] = runs[0][i];
+        }
     }
 }
-*/
+
+fn merge<T: Copy + Eq + Ord>(arr1: &[T], arr2: &[T]) -> Vec<T> {
+    if arr1.len() == 0 {
+        return arr2.to_vec();
+    }
+    if arr2.len() == 0 {
+        return arr1.to_vec();
+    }
+
+    let n = arr1.len() + arr2.len();
+    let mut merged = Vec::with_capacity(n);
+    let mut arr1_index = 0;
+    let mut arr2_index = 0;
+    for i in 0..n {
+        if arr1[arr1_index] < arr2[arr2_index] {
+            merged[i] = arr1[arr1_index];
+            arr1_index += 1;
+        } else {
+            merged[i] = arr2[arr2_index];
+            arr2_index += 1;
+        }
+    }
+    merged
+}
 
 
 pub fn get_min_run(mut n: usize) -> usize {
@@ -190,6 +262,17 @@ fn test_min_run() {
 #[cfg(test)]
 mod test_sorts {
     use super::*;
+
+    fn big_sort_test<F>(sort: &mut F, n: usize)
+    where F: FnMut(&mut [usize])
+    {
+        let mut random_vec = gen_random_vec::<usize>(n);
+        let mut copy = random_vec.clone();
+        fat_sort(&mut copy);
+        assert_ne!(copy, random_vec);
+        sort(random_vec.as_mut_slice());
+        assert_eq!(copy, random_vec);
+    }
 
     #[test]
     fn test_fat_sort() {
@@ -229,36 +312,25 @@ mod test_sorts {
     }
 
     #[test]
+    fn test_timsort() {
+        let mut a = vec![6, 2, 4, 5];
+        timsort(&mut a);
+        assert_eq!(a, [2, 4, 5, 6]);
+    }
+
+    #[test]
     fn big_lsg_test() {
-        let n = 10000;
-        let mut random_vec = gen_random_vec::<usize>(n);
-        let mut copy = random_vec.clone();
-        fat_sort(&mut copy);
-        assert_ne!(copy, random_vec);
-        lsd_sort(&mut random_vec);
-        assert_eq!(copy, random_vec);
+        big_sort_test(&mut lsd_sort, 10000);
     }
 
     #[test]
     fn big_test_heapsort() {
-        let n = 10000;
-        let mut random_vec = gen_random_vec::<usize>(n);
-        let mut copy = random_vec.clone();
-        fat_sort(&mut copy);
-        assert_ne!(copy, random_vec);
-        heapsort(&mut random_vec);
-        assert_eq!(copy, random_vec);
+        big_sort_test(&mut heapsort, 10000);
     }
 
     #[test]
     fn big_test_introsort() {
-        let n = 10000;
-        let mut random_vec = gen_random_vec::<usize>(n);
-        let mut copy = random_vec.clone();
-        fat_sort(&mut copy);
-        assert_ne!(copy, random_vec);
-        introsort(&mut random_vec);
-        assert_eq!(copy, random_vec);
+        big_sort_test(&mut introsort, 10000);
     }
 
 
@@ -271,12 +343,11 @@ mod test_sorts {
 
     #[test]
     fn big_test_insertion_sort() {
-        let n = 10000;
-        let mut random_vec = gen_random_vec::<usize>(n);
-        let mut copy = random_vec.clone();
-        fat_sort(&mut copy);
-        assert_ne!(copy, random_vec);
-        insertion_sort(&mut random_vec);
-        assert_eq!(copy, random_vec);
+        big_sort_test(&mut insertion_sort, 10000);
+    }
+
+    #[test]
+    fn big_test_timsort() {
+        big_sort_test(&mut timsort, 10000);
     }
 }
