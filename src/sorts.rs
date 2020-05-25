@@ -161,7 +161,7 @@ pub fn insertion_sort<T: Copy + Eq + Ord>(arr: &mut [T]) {
     }
 }
 
-
+// Я хотів би завершити тімсорт, але доки нормальної нема. Стріляння з рогатки в небо з надією збити літак. Тому тут спрощена версія яка працює ну максимально повільно, вибачте
 pub fn timsort<T: Copy + Eq + Ord + Debug>(arr: &mut [T]) {
     let minrun = get_min_run(arr.len());
     let mut runs: Vec<Vec<_>> = Vec::new();
