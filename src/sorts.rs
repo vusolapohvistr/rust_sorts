@@ -45,7 +45,7 @@ pub fn patience_sort<T: Copy + Eq + Ord>(arr: &mut [T]) {
         if stacks.len() > 0 {
             let mut pushed = false;
             for stack in stacks.iter_mut() {
-                match stack.last() {
+                match stack.back() {
                     Some(val) => {
                         if *val > *el {
                             stack.push_back(*el);
@@ -161,7 +161,7 @@ pub fn insertion_sort<T: Copy + Eq + Ord>(arr: &mut [T]) {
 }
 
 
-pub fn timsort(arr: &mut [usize]) {
+pub fn timsort<T: Copy + Eq + Ord>(arr: &mut [T]) {
     let minrun = get_min_run(arr.len());
     let mut runs = vec![vec![]];
 
@@ -169,7 +169,7 @@ pub fn timsort(arr: &mut [usize]) {
     // Creating runs
     let mut current_index = 0;
     while current_index < arr.len() {
-        if current_index + minrun > arr.len() {
+        if current_index + minrun < arr.len() {
             let mut run = arr[current_index..current_index + minrun].to_vec();
             current_index += minrun;
             loop {
@@ -192,7 +192,6 @@ pub fn timsort(arr: &mut [usize]) {
         } else {
             let mut run = arr[current_index..].to_vec();
             insertion_sort(run.as_mut_slice());
-            println!("{:?}", run);
             runs.push(run);
             break;
         }
@@ -227,12 +226,22 @@ fn merge<T: Copy + Eq + Ord>(arr1: &[T], arr2: &[T]) -> Vec<T> {
     let mut merged = Vec::with_capacity(n);
     let mut arr1_index = 0;
     let mut arr2_index = 0;
-    for i in 0..n {
-        if arr1[arr1_index] < arr2[arr2_index] {
-            merged[i] = arr1[arr1_index];
-            arr1_index += 1;
+    for _ in 0..n {
+        if let Some(&val1) = arr1.get(arr1_index) {
+            if let Some(&val2) = arr2.get(arr2_index) {
+                if val1 < val2 {
+                    merged.push(val1);
+                    arr1_index += 1;
+                } else {
+                    merged.push(val2);
+                    arr2_index += 1;
+                }
+            } else {
+                merged.push(val1);
+                arr1_index += 1;
+            }
         } else {
-            merged[i] = arr2[arr2_index];
+            merged.push(arr2[arr2_index]);
             arr2_index += 1;
         }
     }
@@ -257,6 +266,14 @@ fn test_min_run() {
     let r = get_min_run(n);
     println!("{}", r);
     assert!(r > 0);
+}
+
+#[test]
+fn test_merge() {
+    let a = vec![1, 3, 5];
+    let b = vec![2, 4, 6];
+    let merged = merge(a.as_slice(), b.as_slice());
+    assert_eq!(merged, vec![1, 2, 3, 4, 5, 6]);
 }
 
 #[cfg(test)]
