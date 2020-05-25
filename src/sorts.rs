@@ -2,6 +2,7 @@ use super::generate_tests::gen_random_vec;
 
 use rand::{thread_rng, Rng};
 use std::collections::LinkedList;
+use std::fmt::Debug;
 
 pub fn fat_sort<T: Copy + PartialOrd>(arr: &mut [T]) {
     for i in 0..arr.len() {
@@ -161,9 +162,9 @@ pub fn insertion_sort<T: Copy + Eq + Ord>(arr: &mut [T]) {
 }
 
 
-pub fn timsort<T: Copy + Eq + Ord>(arr: &mut [T]) {
+pub fn timsort<T: Copy + Eq + Ord + Debug>(arr: &mut [T]) {
     let minrun = get_min_run(arr.len());
-    let mut runs = vec![vec![]];
+    let mut runs: Vec<Vec<_>> = Vec::new();
 
 
     // Creating runs
@@ -174,9 +175,9 @@ pub fn timsort<T: Copy + Eq + Ord>(arr: &mut [T]) {
             current_index += minrun;
             loop {
                 match arr.get(current_index) {
-                    Some(val) => {
-                        if *val > *run.last().unwrap() {
-                            run.push(*val);
+                    Some(&val) => {
+                        if val > *run.last().unwrap() {
+                            run.push(val);
                             current_index += 1;
                         } else {
                             break;
@@ -196,9 +197,38 @@ pub fn timsort<T: Copy + Eq + Ord>(arr: &mut [T]) {
             break;
         }
     }
-
     // Merging
 
+    if runs.len() > 2 {
+        while runs.len() > 2 {
+            for i in (2..runs.len()).rev() {
+                if runs[i].len() > runs[i - 1].len() + runs[i - 2].len()
+                    && runs[i - 1].len() > runs[i - 2].len() {
+                    runs[i - 1] = merge(runs[i].as_slice(), runs[i - 1].as_slice());
+                    runs.remove(i);
+                    break;
+                } else {
+                    if runs[i].len() > runs[i - 2].len() {
+                        runs[i - 1] = merge(runs[i].as_slice(), runs[i - 1].as_slice());
+                        runs.remove(i);
+                    } else {
+                        runs[i - 1] = merge(runs[i - 1].as_slice(), runs[i - 2].as_slice());
+                        runs.remove(i - 2);
+                    }
+                }
+            }
+        }
+    }
+    let mut merged = Vec::new();
+    merged = merge(merged.as_slice(), runs[0].as_slice());
+    if runs.len() == 2 {
+        merged = merge(merged.as_slice(), runs[1].as_slice());
+    }
+    for (i, &val) in merged.iter().enumerate() {
+        arr[i] = val;
+    }
+
+    /*
     if runs.len() > 1 {
         let mut merged = vec![];
         for run in runs {
@@ -212,6 +242,7 @@ pub fn timsort<T: Copy + Eq + Ord>(arr: &mut [T]) {
             arr[i] = runs[0][i];
         }
     }
+    */
 }
 
 fn merge<T: Copy + Eq + Ord>(arr1: &[T], arr2: &[T]) -> Vec<T> {
@@ -264,7 +295,6 @@ pub fn get_min_run(mut n: usize) -> usize {
 fn test_min_run() {
     let n = 10000;
     let r = get_min_run(n);
-    println!("{}", r);
     assert!(r > 0);
 }
 

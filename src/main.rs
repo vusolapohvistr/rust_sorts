@@ -13,8 +13,8 @@ const BENCHMARK_FILE_PATH: &str = "benchmark_results.csv";
 
 fn main() -> Result<()> {
     let mut test_results = Vec::new();
-    let mut testing_sorts = [heapsort, timsort, sort_unstable, sort_stable];
-    let mut testing_sorts_names = ["heapsort", "timsort", "sort_unstable", "sort_stable"];
+    let mut testing_sorts = [heapsort, timsort, sort_unstable, sort_stable, lsd_sort];
+    let mut testing_sorts_names = ["heapsort", "timsort", "sort_unstable", "sort_stable", "lsd_sort"];
     for (i, sort) in testing_sorts.iter_mut().enumerate(){
         let mut test_result = complex_test_sorts(sort, String::from(testing_sorts_names[i]));
         test_results.extend(test_result);
@@ -65,8 +65,8 @@ fn complex_test_sorts<F>(sort: &mut F, sort_name: String) -> Vec<SortTestResult>
 where F: FnMut(&mut [usize]),
 {
     let mut results = Vec::new();
-    // let sizes: [usize; 4] = [30_000, 100_000, 300_000, 1_000_000];
-    let sizes: [usize; 3] = [30000, 100000, 300000];
+    let sizes: [usize; 4] = [30_000, 100_000, 300_000, 1_000_000];
+    // let sizes: [usize; 3] = [30000, 100000, 300000];
     for size in sizes.iter() {
         let mut test_data = gen_random_vec(*size);
         let duration = test_sort(sort, test_data.as_mut_slice());
